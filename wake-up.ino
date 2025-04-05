@@ -83,10 +83,16 @@ String toString(byte *c, unsigned int len) {
 }
 
 void switchOnComputer() {
-  Serial.print("Switching on computer(HIGH -> LOW)...");
-  digitalWrite(GPIO, HIGH);
+  Serial.print("Switching on computer(");
+  Serial.print(!CLOSE_STATE);
+  Serial.print(" -> ");
+  Serial.print(CLOSE_STATE);
+  Serial.print(")...");
+
+  digitalWrite(GPIO, !CLOSE_STATE);
   delay(200);
-  digitalWrite(GPIO, LOW);
+  digitalWrite(GPIO, CLOSE_STATE);
+
   Serial.println("DONE");
 }
 
@@ -180,7 +186,7 @@ void toggleGpio() {
 
 void initGpio() {
   pinMode(GPIO, OUTPUT);
-  digitalWrite(GPIO, LOW);
+  digitalWrite(GPIO, CLOSE_STATE);
   //ticker.attach(1, toggleGpio);
 }
 
