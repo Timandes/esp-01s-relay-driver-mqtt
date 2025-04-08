@@ -20,7 +20,7 @@
 #include<Ticker.h>
 #include"config.h"
 
-#define GPIO 0
+#define GPIO OUTPUT_PIN
 
 #ifdef D9
 #define ON_BOARD_LED D9

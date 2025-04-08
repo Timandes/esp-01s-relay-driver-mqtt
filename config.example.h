@@ -26,4 +26,6 @@ const char *MQTT_TOPIC = "hello/esp8266";
 
 const uint8_t CLOSE_STATE = LOW;
 
+const uint8_t OUTPUT_PIN = 0;
+
 #endif
