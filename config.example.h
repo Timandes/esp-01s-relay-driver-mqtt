@@ -28,4 +28,6 @@ const uint8_t CLOSE_STATE = LOW;
 
 const uint8_t OUTPUT_PIN = 0;
 
+const unsigned long COMPUTER_ON_INTERVAL = 200;
+
 #endif

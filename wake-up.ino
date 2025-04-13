@@ -31,6 +31,9 @@
 
 #define LOOP_INTERVAL 10
 
+#define OFF_STATE CLOSE_STATE
+#define ON_STATE !OFF_STATE
+
 WiFiClient wiFiClient;
 PubSubClient client(wiFiClient);
 
@@ -101,14 +104,14 @@ String toString(byte *c, unsigned int len) {
 
 void switchOnComputer() {
   Serial.print("Switching on computer(");
-  Serial.print(!CLOSE_STATE);
+  Serial.print(ON_STATE);
   Serial.print(" -> ");
-  Serial.print(CLOSE_STATE);
+  Serial.print(OFF_STATE);
   Serial.print(")...");
 
-  digitalWrite(GPIO, !CLOSE_STATE);
+  digitalWrite(GPIO, ON_STATE);
   delay(200);
-  digitalWrite(GPIO, CLOSE_STATE);
+  digitalWrite(GPIO, OFF_STATE);
 
   Serial.println("DONE");
 }
@@ -118,11 +121,11 @@ void mqttMessageArrived(char *topic, byte *payload, unsigned int payloadLen) {
   Serial.print("Got message: ");
   Serial.println(message);
 
-  if (message == "ON") {
-    digitalWrite(GPIO, HIGH);
+  if (message == "ON" || message == "on") {
+    digitalWrite(GPIO, ON_STATE);
     Serial.println("GPIO HIGH");
-  } else if (message == "OFF") {
-    digitalWrite(GPIO, LOW);
+  } else if (message == "OFF" || message == "off") {
+    digitalWrite(GPIO, OFF_STATE);
     Serial.println("GPIO LOW");
   } else if (message == "ComputerOn") {
     switchOnComputer();
@@ -203,7 +206,7 @@ void toggleGpio() {
 
 void initGpio() {
   pinMode(GPIO, OUTPUT);
-  digitalWrite(GPIO, CLOSE_STATE);
+  digitalWrite(GPIO, OFF_STATE);
   //ticker.attach(1, toggleGpio);
 }
 
