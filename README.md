@@ -8,10 +8,16 @@
 * 与其配套的继电器模块
 * 其他公公、公母杜邦线和连接夹等
 
+经过测试的芯片包括：
+
+* ESP8266
+
+* ESP8285
+
 使用到的软件、服务和项目包括：
 
 * MQTT
-* [PubSubClient??](https://github.com/knolleary/pubsubclient)
+* [PubSubClient](https://pubsubclient.knolleary.net)
 * Home Assistant（可选）
 
 
