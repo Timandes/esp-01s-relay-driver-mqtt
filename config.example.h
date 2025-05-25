@@ -28,6 +28,13 @@ const uint8_t CLOSE_STATE = LOW;
 
 const uint8_t OUTPUT_PIN = 0;
 
+#define COMPUTER_ON_ENABLED
 const unsigned long COMPUTER_ON_INTERVAL = 200;
+
+//#define HOME_ASSISTANT_MQTT_DISCOVER_ENABLED
+const char *HOME_ASSISTANT_TOPIC_PREFIX = "homeassistant";
+const char *HOME_ASSISTANT_OBJECT_ID = "esp8266";
+const char *HOME_ASSISTANT_NAME = "ESP8266";
+uint32_t HOME_ASSISTANT_TOPIC_PUBLISH_INTERVAL_IN_MILLIS = 10000;
 
 #endif

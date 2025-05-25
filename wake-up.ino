@@ -10,7 +10,7 @@
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
+   See the License for the specific language governing perm:\Arduino\Projects\wake-up\config.hmissions and
    limitations under the License.
  */
  
@@ -19,6 +19,14 @@
 #include<PubSubClient.h>
 #include<Ticker.h>
 #include"config.h"
+
+#ifdef HOME_ASSISTANT_MQTT_DISCOVER_ENABLED
+#include"ArduinoJson.h"
+
+void mqttTimeUp();
+
+Ticker timer4MqttDiscovery;
+#endif
 
 #define GPIO OUTPUT_PIN
 
@@ -37,7 +45,6 @@
 WiFiClient wiFiClient;
 PubSubClient client(wiFiClient);
 
-Ticker ticker;
 
 uint8_t lastOnBoardLightState = HIGH;
 unsigned long lastOnBoardLightUpdatedAt = 0;
@@ -123,12 +130,20 @@ void mqttMessageArrived(char *topic, byte *payload, unsigned int payloadLen) {
 
   if (message == "ON" || message == "on") {
     digitalWrite(GPIO, ON_STATE);
-    Serial.println("GPIO HIGH");
+    Serial.print("GPIO ");
+    Serial.print(GPIO);
+    Serial.print(" ");
+    Serial.println(ON_STATE);
   } else if (message == "OFF" || message == "off") {
     digitalWrite(GPIO, OFF_STATE);
-    Serial.println("GPIO LOW");
+    Serial.print("GPIO ");
+    Serial.print(GPIO);
+    Serial.print(" ");
+    Serial.println(OFF_STATE);
   } else if (message == "ComputerOn") {
+#ifdef COMPUTER_ON_ENABLED
     switchOnComputer();
+#endif
   }
 }
 
@@ -143,6 +158,7 @@ String macToStr(const uint8_t* mac){
 }
 
 void initMqtt() {
+  client.setBufferSize(256);
   client.setServer(MQTT_HOST, 1883);
   client.setCallback(mqttMessageArrived);
 }
@@ -162,6 +178,8 @@ int connectToMqttServer() {
   onBoardLightBlinkInterval = 300;
 
   String clientId = composeClientId();
+  Serial.print("With client ID: ");
+  Serial.println(clientId);
   if (client.connect(clientId.c_str())) {
 
     onBoardLightBlinkInterval = 0;
@@ -215,6 +233,41 @@ void initLed(uint8_t pin) {
   digitalWrite(pin, HIGH);
 }
 
+void initHomeAssistantDevice() {
+  String topic = HOME_ASSISTANT_TOPIC_PREFIX;
+  topic += "/binary_sensor/";
+  topic += HOME_ASSISTANT_OBJECT_ID;
+  topic += "/config";
+  
+  Serial.print("Publishing to Topic: ");
+  Serial.println(topic);
+
+  JsonDocument doc;
+  doc["name"] = serialized("null");
+  doc["device_class"] = "power";
+  doc["state_topic"] = MQTT_TOPIC;
+  doc["object_id"] = HOME_ASSISTANT_OBJECT_ID;
+  doc["unique_id"] = HOME_ASSISTANT_OBJECT_ID;
+  doc["device"]["identifiers"][0] = HOME_ASSISTANT_OBJECT_ID;
+  doc["device"]["name"] = HOME_ASSISTANT_NAME;
+
+  String payload = "";
+  serializeJson(doc, payload);
+  boolean r = client.publish_P(topic.c_str(), payload.c_str(), false);
+  if (r) {
+    Serial.print("Message published: ");
+  } else {
+    Serial.print("Message publishing failed: ");
+  }
+  Serial.println(payload);
+  Serial.print("payload.len=");
+  Serial.println(payload.length());
+}
+
+void mqttTimeUp() {
+  Serial.println("MQTT Discovery time up");
+  initHomeAssistantDevice();
+}
 
 void setup() {
   Serial.begin(115200);
@@ -226,6 +279,10 @@ void setup() {
   initGpio();
   initWifiSta();
   initMqtt();
+  
+#ifdef HOME_ASSISTANT_MQTT_DISCOVER_ENABLED
+  timer4MqttDiscovery.attach_ms(HOME_ASSISTANT_TOPIC_PUBLISH_INTERVAL_IN_MILLIS, mqttTimeUp);
+#endif
 }
 
 void loop() {
@@ -243,6 +300,6 @@ void loop() {
     }
   }
   client.loop();
-  
+
   delay(LOOP_INTERVAL);
 }

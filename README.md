@@ -19,6 +19,7 @@
 * MQTT
 * [PubSubClient](https://pubsubclient.knolleary.net)
 * Home Assistant（可选）
+* [ArduinoJson](https://arduinojson.org/?utm_source=meta&utm_medium=library.properties)（可选）
 
 
 
