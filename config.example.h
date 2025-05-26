@@ -22,7 +22,14 @@ const char *WIFI_SSID = "";
 const char *WIFI_PASSWD = "";
 
 const char *MQTT_HOST = "192.168.1.2";
-const char *MQTT_TOPIC = "hello/esp8266";
+const uint16_t MQTT_PAYLOAD_BUF_SIZE = 512;
+
+// 命令订阅
+const char *MQTT_COMMAND_TOPIC = "hello/esp8266/command";
+
+// 状态发布
+uint32_t TOPIC_STATUS_PUBLISH_INTERVAL_IN_MILLIS = 10000;
+const char *MQTT_STATUS_TOPIC = "hello/esp8266/status";
 
 const uint8_t CLOSE_STATE = LOW;
 

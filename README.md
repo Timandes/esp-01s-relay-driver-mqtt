@@ -85,7 +85,11 @@
 
 **MQTT_HOST**：MQTT服务器的地址。也可以包含用冒号分割的端口号，如：`192.168.1.2:1234`。
 
-**MQTT_TOPIC**：MQTT订阅主题名字。
+**MQTT_PAYLOAD_BUF_SIZE**：MQTT消息体缓冲区长度。
+
+**MQTT_COMMAND_TOPIC**：MQTT订阅命令的主题名字。
+
+**MQTT_STATUS_TOPIC**：表示开关状态的MQTT主题名字。用于发布。
 
 
 
@@ -96,6 +100,16 @@
 **OUTPUT_PIN**：继电器信号输出管脚。默认为GPIO0（0值）。
 
 **COMPUTER_ON_INTERVAL**：ComputerOn的间隔，单位ms（默认200ms）。
+
+
+
+4. Home Assistant Discovery
+
+**HOME_ASSISTANT_MQTT_DISCOVER_ENABLED**：是否开启自动注册机制。
+
+**HOME_ASSISTANT_NAME**：默认展示名称。
+
+
 
 
 

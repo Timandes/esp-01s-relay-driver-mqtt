@@ -28,8 +28,12 @@ void mqttTimeUp();
 Ticker timer4MqttDiscovery;
 #endif
 
+void mqttStatusPubTimeUp();
+Ticker timer4MqttStatusPub;
+
 #define GPIO OUTPUT_PIN
 
+// 定义板载LED的管脚
 #ifdef D9
 #define ON_BOARD_LED D9
 #endif
@@ -39,6 +43,7 @@ Ticker timer4MqttDiscovery;
 
 #define LOOP_INTERVAL 10
 
+// 定义开关状态值
 #define OFF_STATE CLOSE_STATE
 #define ON_STATE !OFF_STATE
 
@@ -109,6 +114,24 @@ String toString(byte *c, unsigned int len) {
   return retval;
 }
 
+void turnOn() {
+  digitalWrite(GPIO, ON_STATE);
+  Serial.print("GPIO ");
+  Serial.print(GPIO);
+  Serial.print(" ");
+  Serial.println(ON_STATE);
+  pubStatus();
+}
+
+void turnOff() {
+  digitalWrite(GPIO, OFF_STATE);
+  Serial.print("GPIO ");
+  Serial.print(GPIO);
+  Serial.print(" ");
+  Serial.println(OFF_STATE);
+  pubStatus();
+}
+
 void switchOnComputer() {
   Serial.print("Switching on computer(");
   Serial.print(ON_STATE);
@@ -116,9 +139,9 @@ void switchOnComputer() {
   Serial.print(OFF_STATE);
   Serial.print(")...");
 
-  digitalWrite(GPIO, ON_STATE);
+  turnOn();
   delay(200);
-  digitalWrite(GPIO, OFF_STATE);
+  turnOff();
 
   Serial.println("DONE");
 }
@@ -129,17 +152,9 @@ void mqttMessageArrived(char *topic, byte *payload, unsigned int payloadLen) {
   Serial.println(message);
 
   if (message == "ON" || message == "on") {
-    digitalWrite(GPIO, ON_STATE);
-    Serial.print("GPIO ");
-    Serial.print(GPIO);
-    Serial.print(" ");
-    Serial.println(ON_STATE);
+    turnOn();
   } else if (message == "OFF" || message == "off") {
-    digitalWrite(GPIO, OFF_STATE);
-    Serial.print("GPIO ");
-    Serial.print(GPIO);
-    Serial.print(" ");
-    Serial.println(OFF_STATE);
+    turnOff();
   } else if (message == "ComputerOn") {
 #ifdef COMPUTER_ON_ENABLED
     switchOnComputer();
@@ -158,7 +173,7 @@ String macToStr(const uint8_t* mac){
 }
 
 void initMqtt() {
-  client.setBufferSize(256);
+  client.setBufferSize(MQTT_PAYLOAD_BUF_SIZE);
   client.setServer(MQTT_HOST, 1883);
   client.setCallback(mqttMessageArrived);
 }
@@ -206,9 +221,9 @@ int connectToMqttServer() {
 
 void subscribeMqttTopic() {
   Serial.print("Subscribing Topic: ");
-  Serial.println(MQTT_TOPIC);
+  Serial.println(MQTT_COMMAND_TOPIC);
 
-  if (client.subscribe(MQTT_TOPIC)) {
+  if (client.subscribe(MQTT_COMMAND_TOPIC)) {
     Serial.println("Topic subsribed");
   } else {
     client.disconnect();
@@ -235,7 +250,7 @@ void initLed(uint8_t pin) {
 
 void initHomeAssistantDevice() {
   String topic = HOME_ASSISTANT_TOPIC_PREFIX;
-  topic += "/binary_sensor/";
+  topic += "/switch/";
   topic += HOME_ASSISTANT_OBJECT_ID;
   topic += "/config";
   
@@ -244,8 +259,9 @@ void initHomeAssistantDevice() {
 
   JsonDocument doc;
   doc["name"] = serialized("null");
-  doc["device_class"] = "power";
-  doc["state_topic"] = MQTT_TOPIC;
+  doc["device_class"] = "switch";
+  doc["state_topic"] = MQTT_STATUS_TOPIC;
+  doc["command_topic"] = MQTT_COMMAND_TOPIC;
   doc["object_id"] = HOME_ASSISTANT_OBJECT_ID;
   doc["unique_id"] = HOME_ASSISTANT_OBJECT_ID;
   doc["device"]["identifiers"][0] = HOME_ASSISTANT_OBJECT_ID;
@@ -264,9 +280,39 @@ void initHomeAssistantDevice() {
   Serial.println(payload.length());
 }
 
+String readStatusString() {
+  int status = digitalRead(GPIO);
+  if (status == ON_STATE) {
+    return "ON";
+  } else {
+    return "OFF";
+  }
+}
+
+void pubStatus() {
+  Serial.print("Publishing to Topic: ");
+  Serial.println(MQTT_STATUS_TOPIC);
+
+  String payload = readStatusString();
+  boolean r = client.publish_P(MQTT_STATUS_TOPIC, payload.c_str(), false);
+  if (r) {
+    Serial.print("Message published: ");
+  } else {
+    Serial.print("Message publishing failed: ");
+  }
+  Serial.println(payload);
+  Serial.print("payload.len=");
+  Serial.println(payload.length());
+}
+
 void mqttTimeUp() {
   Serial.println("MQTT Discovery time up");
   initHomeAssistantDevice();
+}
+
+void mqttStatusPubTimeUp() {
+  Serial.println("MQTT Status Pub time up");
+  pubStatus();
 }
 
 void setup() {
@@ -283,6 +329,7 @@ void setup() {
 #ifdef HOME_ASSISTANT_MQTT_DISCOVER_ENABLED
   timer4MqttDiscovery.attach_ms(HOME_ASSISTANT_TOPIC_PUBLISH_INTERVAL_IN_MILLIS, mqttTimeUp);
 #endif
+  timer4MqttStatusPub.attach_ms(TOPIC_STATUS_PUBLISH_INTERVAL_IN_MILLIS, mqttStatusPubTimeUp);
 }
 
 void loop() {
