@@ -73,7 +73,7 @@ void ledTo(uint8_t pin, uint8_t state) {
 
 void blink(uint8_t pin) {
   if (onBoardLightBlinkInterval <= 0) {
-    ledTo(pin, LOW);
+    ledTo(pin, ON_BOARD_LED_NORMAL_STATE);
     return;
   }
 
@@ -239,7 +239,7 @@ void toggleGpio() {
 
 void initGpio() {
   pinMode(GPIO, OUTPUT);
-  digitalWrite(GPIO, OFF_STATE);
+  digitalWrite(GPIO, INITIAL_STATE);
   //ticker.attach(1, toggleGpio);
 }
 

@@ -32,6 +32,9 @@ uint32_t TOPIC_STATUS_PUBLISH_INTERVAL_IN_MILLIS = 10000;
 const char *MQTT_STATUS_TOPIC = "hello/esp8266/status";
 
 const uint8_t CLOSE_STATE = LOW;
+const uint8_t INITIAL_STATE = CLOSE_STATE;
+
+const uint8_t ON_BOARD_LED_NORMAL_STATE = LOW;
 
 const uint8_t OUTPUT_PIN = 0;
 

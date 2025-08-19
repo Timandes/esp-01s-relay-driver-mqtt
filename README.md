@@ -95,7 +95,11 @@
 
 3. 继电器配置
 
-**CLOSE_STATE**：继电器处于关闭状态时应该给出的电平状态。可以给出LOW或者HIGHT，默认是LOW（低电平）。
+**CLOSE_STATE**：继电器处于关闭状态时应该给出的电平状态。可以给出LOW或者HIGH，默认是LOW（低电平）。
+
+**INITIAL_STATE**：继电器初始电平。
+
+**ON_BOARD_LED_NORMAL_STATE**：继电器完成初始化后，板载LED的状态（LOW代表常亮，HIGH代表常灭）。
 
 **OUTPUT_PIN**：继电器信号输出管脚。默认为GPIO0（0值）。
 
