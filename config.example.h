@@ -13,10 +13,12 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
- 
+
 
 #ifndef CONFIG_H
 #define CONFIG_H
+
+#include <Arduino.h>
 
 const char *WIFI_SSID = "";
 const char *WIFI_PASSWD = "";
@@ -46,5 +48,11 @@ const char *HOME_ASSISTANT_TOPIC_PREFIX = "homeassistant";
 const char *HOME_ASSISTANT_OBJECT_ID = "esp8266";
 const char *HOME_ASSISTANT_NAME = "ESP8266";
 uint32_t HOME_ASSISTANT_TOPIC_PUBLISH_INTERVAL_IN_MILLIS = 10000;
+
+#define PWM_ENABLED
+const char *  PWM_MQTT_COMMAND_TOPIC = "hello/pwm/cmd";
+uint32_t      PWM_TOPIC_STATUS_PUBLISH_INTERVAL_IN_MILLIS = 10000;
+const char *  PWM_MQTT_STATUS_TOPIC = "hello/pwm/status";
+const uint8_t PWM_OUTPUT_PIN = 3;
 
 #endif

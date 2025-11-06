@@ -13,15 +13,15 @@
    See the License for the specific language governing perm:\Arduino\Projects\wake-up\config.hmissions and
    limitations under the License.
  */
- 
 
+
+#include<ArduinoJson.h>
 #include<ESP8266WiFi.h>
 #include<PubSubClient.h>
 #include<Ticker.h>
 #include"config.h"
 
 #ifdef HOME_ASSISTANT_MQTT_DISCOVER_ENABLED
-#include <ArduinoJson.h>
 
 void mqttTimeUp();
 
@@ -30,6 +30,22 @@ Ticker timer4MqttDiscovery;
 
 void mqttStatusPubTimeUp();
 Ticker timer4MqttStatusPub;
+
+#ifdef PWM_ENABLED
+void pwm_mqtt_status_pub_time_up();
+Ticker timer4MqttPwmStatusPub;
+
+// PWM相关全局变量
+uint16_t current_pwm_value = 0;
+
+// PWM函数声明
+void pwm_init();
+void pwm_set(uint16_t value);
+String pwm_read_status_string();
+void pwm_pub_status();
+void pwm_mqtt_status_pub_time_up();
+void pwm_init_home_assistant_device();
+#endif
 
 #define GPIO OUTPUT_PIN
 
@@ -159,6 +175,12 @@ void mqttMessageArrived(char *topic, byte *payload, unsigned int payloadLen) {
 #ifdef COMPUTER_ON_ENABLED
     switchOnComputer();
 #endif
+#ifdef PWM_ENABLED
+  } else if (strcmp(topic, PWM_MQTT_COMMAND_TOPIC) == 0) {
+    // 处理 PWM 命令
+    uint16_t pwmValue = message.toInt();
+    pwm_set(pwmValue);
+#endif
   }
 }
 
@@ -230,6 +252,19 @@ void subscribeMqttTopic() {
     Serial.println("Fail to subscribe, retrying in 10 sec(s)");
     delay(10000);
   }
+
+#ifdef PWM_ENABLED
+  Serial.print("Subscribing PWM Topic: ");
+  Serial.println(PWM_MQTT_COMMAND_TOPIC);
+
+  if (client.subscribe(PWM_MQTT_COMMAND_TOPIC)) {
+    Serial.println("PWM Topic subscribed");
+  } else {
+    client.disconnect();
+    Serial.println("Fail to subscribe PWM topic, retrying in 10 sec(s)");
+    delay(10000);
+  }
+#endif
 }
 
 void toggleGpio() {
@@ -254,7 +289,7 @@ void initHomeAssistantDevice() {
   topic += "/switch/";
   topic += HOME_ASSISTANT_OBJECT_ID;
   topic += "/config";
-  
+
   Serial.print("Publishing to Topic: ");
   Serial.println(topic);
 
@@ -307,10 +342,95 @@ void pubStatus() {
   Serial.println(payload.length());
 }
 
+#ifdef PWM_ENABLED
+void pwm_init() {
+    pinMode(PWM_OUTPUT_PIN, OUTPUT);
+    analogWrite(PWM_OUTPUT_PIN, 0); // 初始化 PWM 值为 0
+}
+
+void pwm_set(uint16_t value) {
+    current_pwm_value = value;
+    analogWrite(PWM_OUTPUT_PIN, value);
+    Serial.print("PWM GPIO ");
+    Serial.print(PWM_OUTPUT_PIN);
+    Serial.print(" set to ");
+    Serial.println(value);
+    pwm_pub_status();
+}
+
+String pwm_read_status_string() {
+    return String(current_pwm_value);
+}
+
+void pwm_pub_status() {
+    Serial.print("Publishing to PWM Topic: ");
+    Serial.println(PWM_MQTT_STATUS_TOPIC);
+
+    String payload = pwm_read_status_string();
+    boolean r = client.publish_P(PWM_MQTT_STATUS_TOPIC, payload.c_str(), false);
+    if (r) {
+        Serial.print("PWM Message published: ");
+    } else {
+        Serial.print("PWM Message publishing failed: ");
+    }
+    Serial.println(payload);
+    Serial.print("payload.len=");
+    Serial.println(payload.length());
+}
+
+void pwm_mqtt_status_pub_time_up() {
+    Serial.println("MQTT PWM Status Pub time up");
+    pwm_pub_status();
+}
+
+void pwm_init_home_assistant_device() {
+    String topic = HOME_ASSISTANT_TOPIC_PREFIX;
+    topic += "/number/";
+    topic += "pwm_";
+    topic += HOME_ASSISTANT_OBJECT_ID;
+    topic += "/config";
+
+    Serial.print("Publishing to PWM Topic: ");
+    Serial.println(topic);
+
+    DynamicJsonDocument doc(1024);
+    doc["name"] = "PWM Value";
+    doc["state_topic"] = PWM_MQTT_STATUS_TOPIC;
+    doc["command_topic"] = PWM_MQTT_COMMAND_TOPIC;
+    String object_id = "pwm_";
+    object_id += HOME_ASSISTANT_OBJECT_ID;
+    doc["object_id"] = object_id;
+    String unique_id = "pwm_";
+    unique_id += HOME_ASSISTANT_OBJECT_ID;
+    doc["unique_id"] = unique_id;
+    doc["device"]["identifiers"][0] = HOME_ASSISTANT_OBJECT_ID;
+    doc["device"]["name"] = HOME_ASSISTANT_NAME;
+    doc["min"] = 0;
+    doc["max"] = 1023;  // ESP8266 PWM 范围是 0-1023
+    doc["step"] = 1;
+    doc["mode"] = "slider";
+
+    String payload = "";
+    serializeJson(doc, payload);
+    boolean r = client.publish_P(topic.c_str(), payload.c_str(), false);
+    if (r) {
+        Serial.print("PWM Message published: ");
+    } else {
+        Serial.print("PWM Message publishing failed: ");
+    }
+    Serial.println(payload);
+    Serial.print("payload.len=");
+    Serial.println(payload.length());
+}
+#endif
+
 void mqttTimeUp() {
   Serial.println("MQTT Discovery time up");
 #ifdef HOME_ASSISTANT_MQTT_DISCOVER_ENABLED
   initHomeAssistantDevice();
+#endif
+#ifdef PWM_ENABLED
+  pwm_init_home_assistant_device();
 #endif
 }
 
@@ -327,13 +447,20 @@ void setup() {
   initLed(ON_BOARD_LED);
 #endif
   initGpio();
+#ifdef PWM_ENABLED
+  pwm_init();
+#endif
   initWifiSta();
   initMqtt();
-  
+
 #ifdef HOME_ASSISTANT_MQTT_DISCOVER_ENABLED
   timer4MqttDiscovery.attach_ms(HOME_ASSISTANT_TOPIC_PUBLISH_INTERVAL_IN_MILLIS, mqttTimeUp);
 #endif
   timer4MqttStatusPub.attach_ms(TOPIC_STATUS_PUBLISH_INTERVAL_IN_MILLIS, mqttStatusPubTimeUp);
+
+#ifdef PWM_ENABLED
+  timer4MqttPwmStatusPub.attach_ms(PWM_TOPIC_STATUS_PUBLISH_INTERVAL_IN_MILLIS, pwm_mqtt_status_pub_time_up);
+#endif
 }
 
 void loop() {
