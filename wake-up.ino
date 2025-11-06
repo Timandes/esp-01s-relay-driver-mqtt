@@ -37,19 +37,19 @@ Ticker timer4MqttStatusPub;
 
 #define HW_TIMER_INTERVAL_US      20L
 
-volatile uint32_t startMicros = 0;
+volatile uint32_t pwm_start_micro = 0;
 
 // Init ESP8266Timer
-ESP8266Timer ITimer;
+ESP8266Timer pwm_timer;
 
-// Init ESP8266_ISR_PWM
-ESP8266_PWM ISR_PWM;
+// Init ESP8266_pwm_control
+ESP8266_PWM pwm_control;
 
 void pwm_mqtt_status_pub_time_up();
-Ticker timer4MqttPwmStatusPub;
+Ticker pwm_status_pub_timer;
 
 // PWM相关全局变量
-uint16_t current_pwm_value = 0;
+uint16_t pwm_current_value = 0;
 
 // PWM函数声明
 void pwm_init();
@@ -356,20 +356,20 @@ void pubStatus() {
 }
 
 #ifdef PWM_ENABLED
-void IRAM_ATTR TimerHandler()
+void IRAM_ATTR pwm_timer_handler()
 {
-    ISR_PWM.run();
+    pwm_control.run();
 }
 
 void pwm_init() {
     // Interval in microsecs
-    if (ITimer.attachInterruptInterval(HW_TIMER_INTERVAL_US, TimerHandler))
+    if (pwm_timer.attachInterruptInterval(HW_TIMER_INTERVAL_US, pwm_timer_handler))
     {
-        startMicros = micros();
-        Serial.print(F("Starting ITimer OK, micros() = ")); Serial.println(startMicros);
+        pwm_start_micro = micros();
+        Serial.print(F("Starting pwm_timer OK, micros() = ")); Serial.println(pwm_start_micro);
     }
     else {
-        Serial.println(F("Can't set ITimer. Select another freq. or timer"));
+        Serial.println(F("Can't set pwm_timer. Select another freq. or timer"));
     }
 
     pwm_set(45.0);
@@ -377,14 +377,14 @@ void pwm_init() {
 
 void pwm_set(uint16_t value) {
     // You can use this with PWM_Freq in Hz
-    ISR_PWM.setPWM(PWM_OUTPUT_PIN, 500, value);
-    current_pwm_value = value;
+    pwm_control.setPWM(PWM_OUTPUT_PIN, 500, value);
+    pwm_current_value = value;
 
     pwm_pub_status();
 }
 
 String pwm_read_status_string() {
-    return String(current_pwm_value);
+    return String(pwm_current_value);
 }
 
 void pwm_pub_status() {
@@ -488,7 +488,7 @@ void setup() {
   timer4MqttStatusPub.attach_ms(TOPIC_STATUS_PUBLISH_INTERVAL_IN_MILLIS, mqttStatusPubTimeUp);
 
 #ifdef PWM_ENABLED
-  timer4MqttPwmStatusPub.attach_ms(PWM_TOPIC_STATUS_PUBLISH_INTERVAL_IN_MILLIS, pwm_mqtt_status_pub_time_up);
+  pwm_status_pub_timer.attach_ms(PWM_TOPIC_STATUS_PUBLISH_INTERVAL_IN_MILLIS, pwm_mqtt_status_pub_time_up);
 #endif
 }
 
