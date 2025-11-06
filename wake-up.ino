@@ -32,6 +32,19 @@ void mqttStatusPubTimeUp();
 Ticker timer4MqttStatusPub;
 
 #ifdef PWM_ENABLED
+
+#include <ESP8266_PWM.h>
+
+#define HW_TIMER_INTERVAL_US      20L
+
+volatile uint32_t startMicros = 0;
+
+// Init ESP8266Timer
+ESP8266Timer ITimer;
+
+// Init ESP8266_ISR_PWM
+ESP8266_PWM ISR_PWM;
+
 void pwm_mqtt_status_pub_time_up();
 Ticker timer4MqttPwmStatusPub;
 
@@ -343,18 +356,30 @@ void pubStatus() {
 }
 
 #ifdef PWM_ENABLED
+void IRAM_ATTR TimerHandler()
+{
+    ISR_PWM.run();
+}
+
 void pwm_init() {
-    pinMode(PWM_OUTPUT_PIN, OUTPUT);
-    analogWrite(PWM_OUTPUT_PIN, 0); // 初始化 PWM 值为 0
+    // Interval in microsecs
+    if (ITimer.attachInterruptInterval(HW_TIMER_INTERVAL_US, TimerHandler))
+    {
+        startMicros = micros();
+        Serial.print(F("Starting ITimer OK, micros() = ")); Serial.println(startMicros);
+    }
+    else {
+        Serial.println(F("Can't set ITimer. Select another freq. or timer"));
+    }
+
+    pwm_set(45.0);
 }
 
 void pwm_set(uint16_t value) {
+    // You can use this with PWM_Freq in Hz
+    ISR_PWM.setPWM(PWM_OUTPUT_PIN, 500, value);
     current_pwm_value = value;
-    analogWrite(PWM_OUTPUT_PIN, value);
-    Serial.print("PWM GPIO ");
-    Serial.print(PWM_OUTPUT_PIN);
-    Serial.print(" set to ");
-    Serial.println(value);
+
     pwm_pub_status();
 }
 
@@ -442,6 +467,10 @@ void mqttStatusPubTimeUp() {
 void setup() {
   Serial.begin(115200);
   Serial.println("");
+
+  Serial.print(F("\nStarting wake-up on ")); Serial.println(ARDUINO_BOARD);
+  Serial.println(ESP8266_PWM_VERSION);
+  Serial.print(F("CPU Frequency = ")); Serial.print(F_CPU / 1000000); Serial.println(F(" MHz"));
 
 #ifdef ON_BOARD_LED
   initLed(ON_BOARD_LED);
