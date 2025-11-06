@@ -21,7 +21,7 @@
 #include"config.h"
 
 #ifdef HOME_ASSISTANT_MQTT_DISCOVER_ENABLED
-#include"ArduinoJson.h"
+#include <ArduinoJson.h>
 
 void mqttTimeUp();
 
@@ -248,6 +248,7 @@ void initLed(uint8_t pin) {
   digitalWrite(pin, HIGH);
 }
 
+#ifdef HOME_ASSISTANT_MQTT_DISCOVER_ENABLED
 void initHomeAssistantDevice() {
   String topic = HOME_ASSISTANT_TOPIC_PREFIX;
   topic += "/switch/";
@@ -257,8 +258,8 @@ void initHomeAssistantDevice() {
   Serial.print("Publishing to Topic: ");
   Serial.println(topic);
 
-  JsonDocument doc;
-  doc["name"] = serialized("null");
+  DynamicJsonDocument doc(1024);
+  doc["name"] = "null";
   doc["device_class"] = "switch";
   doc["state_topic"] = MQTT_STATUS_TOPIC;
   doc["command_topic"] = MQTT_COMMAND_TOPIC;
@@ -279,6 +280,7 @@ void initHomeAssistantDevice() {
   Serial.print("payload.len=");
   Serial.println(payload.length());
 }
+#endif
 
 String readStatusString() {
   int status = digitalRead(GPIO);
@@ -307,7 +309,9 @@ void pubStatus() {
 
 void mqttTimeUp() {
   Serial.println("MQTT Discovery time up");
+#ifdef HOME_ASSISTANT_MQTT_DISCOVER_ENABLED
   initHomeAssistantDevice();
+#endif
 }
 
 void mqttStatusPubTimeUp() {
