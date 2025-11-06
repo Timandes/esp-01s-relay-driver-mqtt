@@ -49,11 +49,11 @@ void pwm_mqtt_status_pub_time_up();
 Ticker pwm_status_pub_timer;
 
 // PWM相关全局变量
-uint16_t pwm_current_value = 0;
+float pwm_current_value = 0;
 
 // PWM函数声明
 void pwm_init();
-void pwm_set(uint16_t value);
+void pwm_set(float value);
 String pwm_read_status_string();
 void pwm_pub_status();
 void pwm_mqtt_status_pub_time_up();
@@ -191,8 +191,8 @@ void mqttMessageArrived(char *topic, byte *payload, unsigned int payloadLen) {
 #ifdef PWM_ENABLED
   } else if (strcmp(topic, PWM_MQTT_COMMAND_TOPIC) == 0) {
     // 处理 PWM 命令
-    uint16_t pwmValue = message.toInt();
-    pwm_set(pwmValue);
+    float value = message.toFloat();
+    pwm_set(value);
 #endif
   }
 }
@@ -375,9 +375,10 @@ void pwm_init() {
     pwm_set(45.0);
 }
 
-void pwm_set(uint16_t value) {
+void pwm_set(float value) {
+    uint32_t period = 500;
     // You can use this with PWM_Freq in Hz
-    pwm_control.setPWM(PWM_OUTPUT_PIN, 500, value);
+    pwm_control.setPWM(PWM_OUTPUT_PIN, period, value);
     pwm_current_value = value;
 
     pwm_pub_status();
@@ -408,11 +409,12 @@ void pwm_mqtt_status_pub_time_up() {
     pwm_pub_status();
 }
 
+#ifdef HOME_ASSISTANT_MQTT_DISCOVER_ENABLED
 void pwm_init_home_assistant_device() {
     String topic = HOME_ASSISTANT_TOPIC_PREFIX;
     topic += "/number/";
     topic += "pwm_";
-    topic += HOME_ASSISTANT_OBJECT_ID;
+    topic += PWM_HOME_ASSISTANT_OBJECT_ID;
     topic += "/config";
 
     Serial.print("Publishing to PWM Topic: ");
@@ -423,15 +425,15 @@ void pwm_init_home_assistant_device() {
     doc["state_topic"] = PWM_MQTT_STATUS_TOPIC;
     doc["command_topic"] = PWM_MQTT_COMMAND_TOPIC;
     String object_id = "pwm_";
-    object_id += HOME_ASSISTANT_OBJECT_ID;
+    object_id += PWM_HOME_ASSISTANT_OBJECT_ID;
     doc["object_id"] = object_id;
     String unique_id = "pwm_";
-    unique_id += HOME_ASSISTANT_OBJECT_ID;
+    unique_id += PWM_HOME_ASSISTANT_OBJECT_ID;
     doc["unique_id"] = unique_id;
-    doc["device"]["identifiers"][0] = HOME_ASSISTANT_OBJECT_ID;
-    doc["device"]["name"] = HOME_ASSISTANT_NAME;
-    doc["min"] = 0;
-    doc["max"] = 1023;  // ESP8266 PWM 范围是 0-1023
+    doc["device"]["identifiers"][0] = PWM_HOME_ASSISTANT_OBJECT_ID;
+    doc["device"]["name"] = PWM_HOME_ASSISTANT_NAME;
+    doc["min"] = 0.0;
+    doc["max"] = 100.0;
     doc["step"] = 1;
     doc["mode"] = "slider";
 
@@ -448,14 +450,15 @@ void pwm_init_home_assistant_device() {
     Serial.println(payload.length());
 }
 #endif
+#endif
 
 void mqttTimeUp() {
   Serial.println("MQTT Discovery time up");
 #ifdef HOME_ASSISTANT_MQTT_DISCOVER_ENABLED
   initHomeAssistantDevice();
-#endif
 #ifdef PWM_ENABLED
   pwm_init_home_assistant_device();
+#endif
 #endif
 }
 

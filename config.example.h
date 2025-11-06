@@ -49,10 +49,12 @@ const char *HOME_ASSISTANT_OBJECT_ID = "esp8266";
 const char *HOME_ASSISTANT_NAME = "ESP8266";
 uint32_t HOME_ASSISTANT_TOPIC_PUBLISH_INTERVAL_IN_MILLIS = 10000;
 
-#define PWM_ENABLED
+//#define PWM_ENABLED
 const char *  PWM_MQTT_COMMAND_TOPIC = "hello/pwm/cmd";
 uint32_t      PWM_TOPIC_STATUS_PUBLISH_INTERVAL_IN_MILLIS = 10000;
 const char *  PWM_MQTT_STATUS_TOPIC = "hello/pwm/status";
 const uint8_t PWM_OUTPUT_PIN = 3;
+const char *  PWM_HOME_ASSISTANT_OBJECT_ID = "pwm";
+const char *  PWM_HOME_ASSISTANT_NAME = "pwm";
 
 #endif
