@@ -32,6 +32,7 @@ void mqttStatusPubTimeUp();
 Ticker timer4MqttStatusPub;
 
 #ifdef PWM_ENABLED
+#define USING_MICROS_RESOLUTION       true
 
 #include <ESP8266_PWM.h>
 
@@ -50,6 +51,7 @@ Ticker pwm_status_pub_timer;
 
 // PWM相关全局变量
 float pwm_current_value = 0;
+int pwm_channel_no = -1;
 
 // PWM函数声明
 void pwm_init();
@@ -307,7 +309,7 @@ void initHomeAssistantDevice() {
   Serial.println(topic);
 
   DynamicJsonDocument doc(1024);
-  doc["name"] = "null";
+  doc["name"] = serialized("null");
   doc["device_class"] = "switch";
   doc["state_topic"] = MQTT_STATUS_TOPIC;
   doc["command_topic"] = MQTT_COMMAND_TOPIC;
@@ -376,9 +378,17 @@ void pwm_init() {
 }
 
 void pwm_set(float value) {
-    uint32_t period = 500;
+    if (pwm_channel_no >= 0) {
+        pwm_control.deleteChannel((uint8_t) pwm_channel_no);
+    }
+    uint32_t period = 5;
     // You can use this with PWM_Freq in Hz
-    pwm_control.setPWM(PWM_OUTPUT_PIN, period, value);
+    pwm_channel_no = pwm_control.setPWM(PWM_OUTPUT_PIN, period, value);
+    if (pwm_channel_no < 0) {
+        onBoardLightBlinkInterval = 30;
+    } else {
+        onBoardLightBlinkInterval = 0;
+    }
     pwm_current_value = value;
 
     pwm_pub_status();
@@ -413,7 +423,6 @@ void pwm_mqtt_status_pub_time_up() {
 void pwm_init_home_assistant_device() {
     String topic = HOME_ASSISTANT_TOPIC_PREFIX;
     topic += "/number/";
-    topic += "pwm_";
     topic += PWM_HOME_ASSISTANT_OBJECT_ID;
     topic += "/config";
 
@@ -421,15 +430,11 @@ void pwm_init_home_assistant_device() {
     Serial.println(topic);
 
     DynamicJsonDocument doc(1024);
-    doc["name"] = "PWM Value";
+    doc["name"] = serialized("null");
     doc["state_topic"] = PWM_MQTT_STATUS_TOPIC;
     doc["command_topic"] = PWM_MQTT_COMMAND_TOPIC;
-    String object_id = "pwm_";
-    object_id += PWM_HOME_ASSISTANT_OBJECT_ID;
-    doc["object_id"] = object_id;
-    String unique_id = "pwm_";
-    unique_id += PWM_HOME_ASSISTANT_OBJECT_ID;
-    doc["unique_id"] = unique_id;
+    doc["object_id"] = PWM_HOME_ASSISTANT_OBJECT_ID;
+    doc["unique_id"] = PWM_HOME_ASSISTANT_OBJECT_ID;
     doc["device"]["identifiers"][0] = PWM_HOME_ASSISTANT_OBJECT_ID;
     doc["device"]["name"] = PWM_HOME_ASSISTANT_NAME;
     doc["min"] = 0.0;
