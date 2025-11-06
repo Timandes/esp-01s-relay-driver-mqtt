@@ -8,6 +8,7 @@
 2. 安装ESP8266核心支持
 3. 安装Make工具
 4. 安装所需库（ArduinoJson、PubSubClient）
+5. 如果启用PWM功能，还需要安装ESP8266_PWM库
 
 ## 安装所需库
 
@@ -19,6 +20,13 @@ arduino-cli lib install ArduinoJson
 
 # 安装PubSubClient库
 arduino-cli lib install PubSubClient
+```
+
+如果启用了PWM功能（在config.h中定义了PWM_ENABLED），还需要安装ESP8266_PWM库：
+
+```bash
+# 安装ESP8266_PWM库
+arduino-cli lib install ESP8266_PWM
 ```
 
 ## 构建流程
@@ -80,6 +88,8 @@ make help         # 显示帮助信息
    ```bash
    arduino-cli lib list
    ```
+
+   如果启用了PWM功能，还需要确保ESP8266_PWM库已正确安装。
 
 2. 如果上传失败，请检查：
    - ESP8266是否正确连接到计算机
