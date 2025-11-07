@@ -1,6 +1,8 @@
 # ESP-01S 继电器智能家居驱动
 
+版本：0.3+
 
+**注意：PWM功能从版本0.3开始支持。**
 
 主要解决电脑远程开关机等远程控制问题。使用到的硬件模块包括：
 
@@ -20,6 +22,7 @@
 * [PubSubClient](https://pubsubclient.knolleary.net)
 * Home Assistant（可选）
 * [ArduinoJson](https://arduinojson.org/?utm_source=meta&utm_medium=library.properties)（可选）
+* [ESP8266_PWM](https://github.com/khoih-prog/ESP8266_PWM)（可选，用于PWM功能）
 
 
 
@@ -64,6 +67,15 @@
 ### PubSubClient
 
 ### Home Assistant（可选）
+
+### PWM功能（可选）
+
+如果需要使用PWM功能，还需要安装ESP8266_PWM库：
+
+```bash
+# 安装ESP8266_PWM库
+arduino-cli lib install ESP8266_PWM
+```
 
 
 
@@ -115,6 +127,24 @@
 
 
 
+5. PWM配置（可选）
+
+**PWM_ENABLED**：是否启用PWM功能。默认不启用，取消注释`//#define PWM_ENABLED`来启用。
+
+**PWM_MQTT_COMMAND_TOPIC**：PWM控制命令的MQTT主题名字。
+
+**PWM_MQTT_STATUS_TOPIC**：表示PWM状态的MQTT主题名字。用于发布。
+
+**PWM_OUTPUT_PIN**：PWM信号输出管脚。默认为GPIO3（3值）。
+
+**PWM_TOPIC_STATUS_PUBLISH_INTERVAL_IN_MILLIS**：PWM状态发布间隔（毫秒）。
+
+**PWM_HOME_ASSISTANT_OBJECT_ID**：在Home Assistant中注册的PWM设备对象ID。
+
+**PWM_HOME_ASSISTANT_NAME**：在Home Assistant中显示的PWM设备名称。
+
+
+
 
 
 ## MQTT消息
@@ -126,6 +156,8 @@
 | ON         | IO0高电平（HIGH）                                           |
 | OFF        | IO0低电平（LOW）                                            |
 | ComputerOn | 通过IO0连续发送`!CLOSE_STATE`和`CLOSE_STATE`状态，间隔200ms |
+
+当启用PWM功能时，还可以通过向`PWM_MQTT_COMMAND_TOPIC`主题发送数字（0-100）来控制PWM输出的占空比。
 
 
 
