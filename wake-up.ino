@@ -381,7 +381,7 @@ void pwm_set(float value) {
     if (pwm_channel_no >= 0) {
         pwm_control.deleteChannel((uint8_t) pwm_channel_no);
     }
-    uint32_t period = 5;
+    uint32_t period = 40; // 25KHz
     // You can use this with PWM_Freq in Hz
     pwm_channel_no = pwm_control.setPWM(PWM_OUTPUT_PIN, period, value);
     if (pwm_channel_no < 0) {
