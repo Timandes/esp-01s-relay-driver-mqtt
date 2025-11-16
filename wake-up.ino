@@ -381,9 +381,9 @@ void pwm_set(float value) {
     if (pwm_channel_no >= 0) {
         pwm_control.deleteChannel((uint8_t) pwm_channel_no);
     }
-    uint32_t period = 40; // 25KHz
+    uint32_t freq = 500;
     // You can use this with PWM_Freq in Hz
-    pwm_channel_no = pwm_control.setPWM(PWM_OUTPUT_PIN, period, value);
+    pwm_channel_no = pwm_control.setPWM(PWM_OUTPUT_PIN, freq, value);
     if (pwm_channel_no < 0) {
         onBoardLightBlinkInterval = 30;
     } else {
