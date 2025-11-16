@@ -36,9 +36,9 @@
 
 ## 马上开始
 
-1. 复制`config.example.h`到`config.h`；
+1. 复制`config.example.hpp`到`config.hpp`；
 
-2. 修改`config.h`中的WiFi、MQTT服务器及继电器处于关闭状态时的状态值（HIGH|LOW）；
+2. 修改`config.hpp`中的WiFi、MQTT服务器及继电器处于关闭状态时的状态值（HIGH|LOW）；
 
 3. 编译并完成烧录；
 

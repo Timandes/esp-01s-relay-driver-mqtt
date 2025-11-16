@@ -15,46 +15,51 @@
  */
 
 
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef CONFIG_HPP
+#define CONFIG_HPP
 
 #include <Arduino.h>
+#include "config.example.hpp"
 
+// WiFi配置实现
 const char *WIFI_SSID = "";
 const char *WIFI_PASSWD = "";
 
+// MQTT配置实现
 const char *MQTT_HOST = "192.168.1.2";
 const uint16_t MQTT_PAYLOAD_BUF_SIZE = 512;
 
-// 命令订阅
+// 命令订阅实现
 const char *MQTT_COMMAND_TOPIC = "hello/esp8266/command";
 
-// 状态发布
+// 状态发布实现
 uint32_t TOPIC_STATUS_PUBLISH_INTERVAL_IN_MILLIS = 10000;
 const char *MQTT_STATUS_TOPIC = "hello/esp8266/status";
 
+// 状态配置实现
 const uint8_t CLOSE_STATE = LOW;
 const uint8_t INITIAL_STATE = CLOSE_STATE;
-
 const uint8_t ON_BOARD_LED_NORMAL_STATE = LOW;
-
 const uint8_t OUTPUT_PIN = 0;
 
+// 计算机开机配置实现
 #define COMPUTER_ON_ENABLED
 const unsigned long COMPUTER_ON_INTERVAL = 200;
 
+// Home Assistant配置实现
 //#define HOME_ASSISTANT_MQTT_DISCOVER_ENABLED
 const char *HOME_ASSISTANT_TOPIC_PREFIX = "homeassistant";
 const char *HOME_ASSISTANT_OBJECT_ID = "esp8266";
 const char *HOME_ASSISTANT_NAME = "ESP8266";
 uint32_t HOME_ASSISTANT_TOPIC_PUBLISH_INTERVAL_IN_MILLIS = 10000;
 
+// PWM功能配置实现
 //#define PWM_ENABLED
-const char *  PWM_MQTT_COMMAND_TOPIC = "hello/pwm/cmd";
+const char*   PWM_MQTT_COMMAND_TOPIC = "hello/pwm/cmd";
 uint32_t      PWM_TOPIC_STATUS_PUBLISH_INTERVAL_IN_MILLIS = 10000;
-const char *  PWM_MQTT_STATUS_TOPIC = "hello/pwm/status";
+const char*   PWM_MQTT_STATUS_TOPIC = "hello/pwm/status";
 const uint8_t PWM_OUTPUT_PIN = 3;
-const char *  PWM_HOME_ASSISTANT_OBJECT_ID = "pwm";
-const char *  PWM_HOME_ASSISTANT_NAME = "pwm";
+const char *PWM_HOME_ASSISTANT_OBJECT_ID = "pwm";
+const char *PWM_HOME_ASSISTANT_NAME = "pwm";
 
 #endif
