@@ -1,8 +1,8 @@
 # ESP-01S 继电器智能家居驱动
 
-版本：0.3+
+版本：0.4+
 
-**注意：PWM功能从版本0.3开始支持。**
+**注意：PWM功能从版本0.3开始支持。TACHO功能从版本0.4开始支持。**
 
 主要解决电脑远程开关机等远程控制问题。使用到的硬件模块包括：
 
@@ -145,6 +145,24 @@ arduino-cli lib install ESP8266_PWM
 
 
 
+6. TACHO配置（可选）**（版本0.4+）**
+
+**TACHO_ENABLED**：是否启用TACHO（转速计）功能。默认不启用，取消注释`//#define TACHO_ENABLED`来启用。
+
+**TACHO_INPUT_PIN**：TACHO信号输入管脚。默认为GPIO0（0值），用于接收转速信号。
+
+**TACHO_MQTT_COMMAND_TOPIC**：TACHO控制命令的MQTT主题名字（当前未使用）。
+
+**TACHO_MQTT_STATUS_TOPIC**：表示TACHO状态的MQTT主题名字。用于发布转速（RPM）数据。
+
+**TACHO_TOPIC_STATUS_PUBLISH_INTERVAL_IN_MILLIS**：TACHO状态发布间隔（毫秒）。
+
+**TACHO_HOME_ASSISTANT_OBJECT_ID**：在Home Assistant中注册的TACHO设备对象ID。
+
+**TACHO_HOME_ASSISTANT_NAME**：在Home Assistant中显示的TACHO设备名称。
+
+
+
 
 
 ## MQTT消息
@@ -158,6 +176,8 @@ arduino-cli lib install ESP8266_PWM
 | ComputerOn | 通过IO0连续发送`!CLOSE_STATE`和`CLOSE_STATE`状态，间隔200ms |
 
 当启用PWM功能时，还可以通过向`PWM_MQTT_COMMAND_TOPIC`主题发送数字（0-100）来控制PWM输出的占空比。
+
+当启用TACHO功能时，系统会自动通过`TACHO_MQTT_STATUS_TOPIC`主题发布当前转速（RPM）数据，无需手动发送命令。
 
 
 
