@@ -19,6 +19,7 @@
 #include<ESP8266WiFi.h>
 #include<PubSubClient.h>
 #include<Ticker.h>
+#include<EEPROM.h>
 #include"config.h"
 
 #ifdef HOME_ASSISTANT_MQTT_DISCOVER_ENABLED
@@ -38,6 +39,11 @@ Ticker timer4MqttStatusPub;
 
 #define HW_TIMER_INTERVAL_US      20L
 
+// PWM EEPROM相关常量定义
+#define PWM_EEPROM_SIZE 4
+#define PWM_EEPROM_ADDR 0
+#define PWM_TIMER_INTERVAL_MS 600000  // 10分钟 = 600000毫秒
+
 volatile uint32_t pwm_start_micro = 0;
 
 // Init ESP8266Timer
@@ -48,6 +54,9 @@ ESP8266_PWM pwm_control;
 
 void pwm_mqtt_status_pub_time_up();
 Ticker pwm_status_pub_timer;
+
+// PWM定时器
+Ticker pwm_timer_eeprom;
 
 // PWM相关全局变量
 float pwm_current_value = 0;
@@ -60,6 +69,11 @@ String pwm_read_status_string();
 void pwm_pub_status();
 void pwm_mqtt_status_pub_time_up();
 void pwm_init_home_assistant_device();
+float pwm_read_eeprom_value();
+void pwm_write_eeprom_value(float value);
+void pwm_read_eeprom();
+void pwm_write_eeprom();
+void pwm_eeprom_timer_handler();
 #endif
 
 #define GPIO OUTPUT_PIN
@@ -364,6 +378,9 @@ void IRAM_ATTR pwm_timer_handler()
 }
 
 void pwm_init() {
+    // 从EEPROM读取PWM值
+    pwm_read_eeprom();
+    
     // Interval in microsecs
     if (pwm_timer.attachInterruptInterval(HW_TIMER_INTERVAL_US, pwm_timer_handler))
     {
@@ -374,7 +391,7 @@ void pwm_init() {
         Serial.println(F("Can't set pwm_timer. Select another freq. or timer"));
     }
 
-    pwm_set(45.0);
+    pwm_set(pwm_current_value);
 }
 
 void pwm_set(float value) {
@@ -391,11 +408,64 @@ void pwm_set(float value) {
     }
     pwm_current_value = value;
 
+    // 写入EEPROM保存当前值
+    pwm_write_eeprom();
+
     pwm_pub_status();
 }
 
 String pwm_read_status_string() {
     return String(pwm_current_value);
+}
+
+float pwm_read_eeprom_value() {
+    EEPROM.begin(PWM_EEPROM_SIZE);
+    float stored_value = EEPROM.read(PWM_EEPROM_ADDR);
+    EEPROM.end();
+    return stored_value;
+}
+
+void pwm_write_eeprom_value(float value) {
+    EEPROM.begin(PWM_EEPROM_SIZE);
+    EEPROM.write(PWM_EEPROM_ADDR, (uint8_t)value);
+    EEPROM.commit();
+    EEPROM.end();
+}
+
+void pwm_read_eeprom() {
+    float stored_value = pwm_read_eeprom_value();
+    
+    // 检查值是否在有效范围内(0-100)
+    if (stored_value >= 0 && stored_value <= 100) {
+        pwm_current_value = stored_value;
+        Serial.print("PWM value read from EEPROM: ");
+        Serial.println(pwm_current_value);
+    } else {
+        pwm_current_value = 50; // 默认值
+        Serial.print("Invalid PWM value in EEPROM, using default: ");
+        Serial.println(pwm_current_value);
+    }
+}
+
+void pwm_write_eeprom() {
+    // 读取EEPROM中的当前值
+    float eeprom_value = pwm_read_eeprom_value();
+    
+    // 检查是否需要写入（值不一致时才写入）
+    if (abs(eeprom_value - pwm_current_value) > 0.1) {
+        pwm_write_eeprom_value(pwm_current_value);
+        Serial.print("PWM value written to EEPROM: ");
+        Serial.println(pwm_current_value);
+    } else {
+        Serial.println("PWM value unchanged, skipping EEPROM write");
+    }
+}
+
+void pwm_eeprom_timer_handler() {
+    Serial.println("PWM EEPROM timer triggered - ensuring consistency");
+    
+    // 调用写入函数，它会自动检查一致性并按需写入
+    pwm_write_eeprom();
 }
 
 void pwm_pub_status() {
@@ -497,6 +567,7 @@ void setup() {
 
 #ifdef PWM_ENABLED
   pwm_status_pub_timer.attach_ms(PWM_TOPIC_STATUS_PUBLISH_INTERVAL_IN_MILLIS, pwm_mqtt_status_pub_time_up);
+  pwm_timer_eeprom.attach_ms(PWM_TIMER_INTERVAL_MS, pwm_eeprom_timer_handler);
 #endif
 }
 
