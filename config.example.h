@@ -48,6 +48,8 @@ const char *HOME_ASSISTANT_TOPIC_PREFIX = "homeassistant";
 const char *HOME_ASSISTANT_OBJECT_ID = "esp8266";
 const char *HOME_ASSISTANT_NAME = "ESP8266";
 uint32_t HOME_ASSISTANT_TOPIC_PUBLISH_INTERVAL_IN_MILLIS = 10000;
+const char *HOME_ASSISTANT_DEVICE_IDENTIFIER = "hello";
+const char *HOME_ASSISTANT_DEVICE_NAME = "Hello";
 
 //#define PWM_ENABLED
 const char *  PWM_MQTT_COMMAND_TOPIC = "hello/pwm/cmd";
@@ -56,5 +58,13 @@ const char *  PWM_MQTT_STATUS_TOPIC = "hello/pwm/status";
 const uint8_t PWM_OUTPUT_PIN = 3;
 const char *  PWM_HOME_ASSISTANT_OBJECT_ID = "pwm";
 const char *  PWM_HOME_ASSISTANT_NAME = "pwm";
+
+//#define TACHO_ENABLED
+const uint8_t TACHO_INPUT_PIN = 0; // D0引脚用于TACHO输入
+uint32_t      TACHO_TOPIC_STATUS_PUBLISH_INTERVAL_IN_MILLIS = 10000;
+const char*   TACHO_MQTT_COMMAND_TOPIC = "hello/tacho/cmd"; // 没有用处
+const char *  TACHO_MQTT_STATUS_TOPIC = "hello/tacho/status";
+const char *  TACHO_HOME_ASSISTANT_OBJECT_ID = "tacho";
+const char *  TACHO_HOME_ASSISTANT_NAME = "tacho";
 
 #endif

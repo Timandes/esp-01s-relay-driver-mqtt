@@ -31,6 +31,10 @@ Ticker timer4MqttDiscovery;
 void mqttStatusPubTimeUp();
 Ticker timer4MqttStatusPub;
 
+#ifdef TACHO_ENABLED
+#include"tacho.h"
+#endif
+
 #ifdef PWM_ENABLED
 #define USING_MICROS_RESOLUTION       true
 
@@ -309,14 +313,15 @@ void initHomeAssistantDevice() {
   Serial.println(topic);
 
   DynamicJsonDocument doc(1024);
-  doc["name"] = serialized("null");
+  doc["name"] = HOME_ASSISTANT_NAME;
   doc["device_class"] = "switch";
   doc["state_topic"] = MQTT_STATUS_TOPIC;
   doc["command_topic"] = MQTT_COMMAND_TOPIC;
   doc["object_id"] = HOME_ASSISTANT_OBJECT_ID;
   doc["unique_id"] = HOME_ASSISTANT_OBJECT_ID;
-  doc["device"]["identifiers"][0] = HOME_ASSISTANT_OBJECT_ID;
-  doc["device"]["name"] = HOME_ASSISTANT_NAME;
+  doc["device"]["identifiers"][0] = HOME_ASSISTANT_DEVICE_IDENTIFIER;
+  doc["device"]["name"] = HOME_ASSISTANT_DEVICE_NAME;
+  doc["device"]["manufacturer"] = "Timandes White";
 
   String payload = "";
   serializeJson(doc, payload);
@@ -430,13 +435,14 @@ void pwm_init_home_assistant_device() {
     Serial.println(topic);
 
     DynamicJsonDocument doc(1024);
-    doc["name"] = serialized("null");
+    doc["name"] = PWM_HOME_ASSISTANT_NAME;
     doc["state_topic"] = PWM_MQTT_STATUS_TOPIC;
     doc["command_topic"] = PWM_MQTT_COMMAND_TOPIC;
     doc["object_id"] = PWM_HOME_ASSISTANT_OBJECT_ID;
     doc["unique_id"] = PWM_HOME_ASSISTANT_OBJECT_ID;
-    doc["device"]["identifiers"][0] = PWM_HOME_ASSISTANT_OBJECT_ID;
-    doc["device"]["name"] = PWM_HOME_ASSISTANT_NAME;
+    doc["device"]["identifiers"][0] = HOME_ASSISTANT_DEVICE_IDENTIFIER;
+    doc["device"]["name"] = HOME_ASSISTANT_DEVICE_NAME;
+    doc["device"]["manufacturer"] = "Timandes White";
     doc["min"] = 0.0;
     doc["max"] = 100.0;
     doc["step"] = 1;
@@ -463,6 +469,9 @@ void mqttTimeUp() {
   initHomeAssistantDevice();
 #ifdef PWM_ENABLED
   pwm_init_home_assistant_device();
+#endif
+#ifdef TACHO_ENABLED
+  tacho_init_home_assistant_device();
 #endif
 #endif
 }
@@ -498,6 +507,10 @@ void setup() {
 #ifdef PWM_ENABLED
   pwm_status_pub_timer.attach_ms(PWM_TOPIC_STATUS_PUBLISH_INTERVAL_IN_MILLIS, pwm_mqtt_status_pub_time_up);
 #endif
+
+#ifdef TACHO_ENABLED
+  tacho_init(TACHO_INPUT_PIN);
+#endif
 }
 
 void loop() {
@@ -515,6 +528,8 @@ void loop() {
     }
   }
   client.loop();
+
+  //tacho_loop();// REMOVEME:
 
   delay(LOOP_INTERVAL);
 }
